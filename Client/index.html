@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App (Socket.IO)</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #weather {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Ứng dụng thời tiết</h1>
+    <input type="text" id="city" placeholder="Nhập thành phố...">
+    <button onclick="getWeather()">Lấy thời tiết</button>
+
+    <h3 id="result"></h3>
+
+    <script>
+        const socket = io("http://localhost:3000");
+
+        function getWeather() {
+            const city = document.getElementById("city").value;
+            if (city) {
+                socket.emit("getWeather", city);
+            } else {
+                alert("Vui lòng nhập thành phố!");
+            }
+        }
+
+        socket.on("weatherData", (data) => {
+            console.log("Dữ liệu nhận được từ server:", data); // Kiểm tra dữ liệu trong console
+
+            if (!data || !data.name) {
+                document.getElementById("result").innerText = "Lỗi: Không thể lấy dữ liệu thời tiết!";
+                return;
+            }
+
+            document.getElementById("result").innerText =
+                `Thời tiết tại ${data.name}: ${data.weather[0].description}, Nhiệt độ: ${data.main.temp}°C`;
+        });
+
+        socket.on("error", (message) => {
+            alert(message);
+        });
+    </script>
+</body>
+
+</html>
