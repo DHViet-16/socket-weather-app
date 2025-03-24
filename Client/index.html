@@ -1,58 +1,120 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js " defer></script>
+    <!-- Import Icon -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    />
+  </head>
+  <body>
+    <main class="main-container">
+      <header class="input-container">
+        <input
+          type="text"
+          class="city-input"
+          placeholder="Nhập tên thành phố..."
+        />
+        <button class="search-btn">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+      </header>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App (Socket.IO)</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
+      <section class="weather-info" style="display: none">
+        <div class="location-date-container">
+          <div class="location">
+            <span class="material-symbols-outlined"> location_on </span>
+            <h4 class="country-txt" id="#cityDisplay">Hồ Chí Minh</h4>
+          </div>
+          <h5 class="current-date-txt regular-txt">Hôm nay</h5>
+        </div>
 
-        #weather {
-            margin-top: 20px;
-        }
-    </style>
-</head>
+        <div class="weather-sumamary-container">
+          <img
+            src="./assets/weather/clouds.svg"
+            alt=""
+            class="weather-summary-img"
+          />
+          <div class="weather-summary-info">
+            <h1 class="temp-txt">29 °C</h1>
+            <h3 class="condition-txt regular-txt">Clouds</h3>
+          </div>
+        </div>
 
-<body>
-    <h1>Ứng dụng thời tiết</h1>
-    <input type="text" id="city" placeholder="Nhập thành phố...">
-    <button onclick="getWeather()">Lấy thời tiết</button>
+        <div class="weather-conditions-container">
+          <div class="condition-item">
+            <span class="material-symbols-outlined"> water_drop </span>
+            <div class="condition-info">
+              <h5 class="regular-txt">Humidity</h5>
+              <h5 class="humidity-value-txt">55%</h5>
+            </div>
+          </div>
 
-    <h3 id="result"></h3>
+          <div class="condition-item">
+            <span class="material-symbols-outlined"> air </span>
+            <div class="condition-info">
+              <h5 class="regular-txt">Wind Speed</h5>
+              <h5 class="wind-value-txt">3 M/s</h5>
+            </div>
+          </div>
+        </div>
+        <div class="forecast-items-container">
+          <div class="forecast-item">
+            <h5 class="forecast-item-date regular-txt">05 Aug</h5>
+            <img
+              src="./assets/weather/thunderstorm.svg"
+              class="forecast-item-img"
+            />
+            <h5 class="forecast-item-temp">29 °C</h5>
+          </div>
+        </div>
+        <div class="forecast-tomorrow-items-container">
+          <!-- <div class="forecast-tomorrow-items">
+            <h5 class="forecast-tomorrow-items-date regular-txt">05 Aug</h5>
+            <img
+              src="./assets/weather/thunderstorm.svg"
+              class="forecast-tomorrow-items-img"
+            />
+            <h5 class="forecast-item-temp">29 °C</h5>
+          </div>
+          <div class="forecast-tomorrow-items">
+            <h5 class="forecast-tomorrow-items-date regular-txt">05 Aug</h5>
+            <img
+              src="./assets/weather/thunderstorm.svg"
+              class="forecast-tomorrow-items-img"
+            />
+            <h5 class="forecast-item-temp">29 °C</h5>
+          </div> -->
+        </div>
+      </section>
 
-    <script>
-        const socket = io("http://localhost:3000");
-
-        function getWeather() {
-            const city = document.getElementById("city").value;
-            if (city) {
-                socket.emit("getWeather", city);
-            } else {
-                alert("Vui lòng nhập thành phố!");
-            }
-        }
-
-        socket.on("weatherData", (data) => {
-            console.log("Dữ liệu nhận được từ server:", data); // Kiểm tra dữ liệu trong console
-
-            if (!data || !data.name) {
-                document.getElementById("result").innerText = "Lỗi: Không thể lấy dữ liệu thời tiết!";
-                return;
-            }
-
-            document.getElementById("result").innerText =
-                `Thời tiết tại ${data.name}: ${data.weather[0].description}, Nhiệt độ: ${data.main.temp}°C`;
-        });
-
-        socket.on("error", (message) => {
-            alert(message);
-        });
-    </script>
-</body>
-
+      <section class="search-city section-message" style="display: none">
+        <img src="./assets/message/search-city.png" />
+        <div>
+          <h1>Search City</h1>
+          <h4 class="regular-txt">
+            Find out the weather conditions of the city
+          </h4>
+        </div>
+      </section>
+      <section class="not-found section-message" style="display: none">
+        <img src="./assets/message/not-found.png" />
+        <div>
+          <h1>Search City</h1>
+          <h4 class="regular-txt">
+            Find out the weather conditions of the city
+          </h4>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>
