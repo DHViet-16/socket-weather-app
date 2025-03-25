@@ -14,17 +14,29 @@ const io = socketIo(server, {
   },
 });
 
-// Hàm lấy dữ liệu thời tiết từ OpenWeatherMap
+app.use(cors());
+
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+const WEATHER_API_URL = "https://api.weatherapi.com/v1/forecast.json";
+
+// Hàm lấy dữ liệu thời tiết
 const fetchWeatherData = async (city) => {
-    try {
-        const response = await axios.get(WEATHER_API_URL, {
-            params: { q: city, appid: WEATHER_API_KEY, units: "metric", lang: "vi" }
-        });
-        return response.data;
-    } catch (error) {
-        console.error("Lỗi lấy dữ liệu thời tiết:", error.message);
-        return null;
-    }
+  try {
+    const response = await axios.get(WEATHER_API_URL, {
+      params: {
+        key: WEATHER_API_KEY,
+        q: city,
+        days: 5,
+        aqi: "yes",
+        alerts: "yes",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi lấy dữ liệu thời tiết:", error.message);
+    // socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
+    return null;
+  }
 };
 
 io.on("connection", (socket) => {
