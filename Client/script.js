@@ -82,7 +82,6 @@ function updateWeatherInfo(data) {
   uvText.innerHTML = `<strong>${uv}</strong>`;
   pressure.innerHTML = `<strong>${pressure_mb}</strong> Mb`;
   vision.innerHTML = `<strong>${vis_km}</strong> Km`;
-  updateForecastsInfo(data);
 }
 
 // TÌM KIẾM THÀNH PHỐ KHÔNG CÓ SẼ HIỂN THỊ TRANG NOT FOUND
@@ -93,11 +92,6 @@ function showDisplaySection(section) {
   section.style.display = "flex";
 }
 
-socket.on("error", (message) => {
-  console.log("❌ Lỗi nhận được từ server:", message);
-
-  // Ẩn tất cả các phần
+socket.on("error", () => {
   showDisplaySection(notFoundSection);
-
-  // Nếu có phần hiển thị lỗi, cập nhật nội dung
 });
