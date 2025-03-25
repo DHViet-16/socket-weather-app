@@ -34,7 +34,7 @@ const fetchWeatherData = async (city) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi lấy dữ liệu thời tiết:", error.message);
-    // socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
+    
     return null;
   }
 };

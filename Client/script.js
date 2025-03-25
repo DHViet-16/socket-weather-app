@@ -39,7 +39,7 @@ socket.on("weatherData", (data) => {
   if (!data) {
     socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
   }
-  // console.log(data);
+
 
   updateWeatherInfo(data);
 });
@@ -63,7 +63,7 @@ function updateWeatherInfo(data) {
       forecastday: [
         {
           day: { maxtemp_c, mintemp_c },
-          // astro: { sunrise, sunset },
+       
         },
       ],
     },
@@ -82,6 +82,7 @@ function updateWeatherInfo(data) {
   uvText.innerHTML = `<strong>${uv}</strong>`;
   pressure.innerHTML = `<strong>${pressure_mb}</strong> Mb`;
   vision.innerHTML = `<strong>${vis_km}</strong> Km`;
+  updateForecastsInfo(data);
 }
 
 // TÌM KIẾM THÀNH PHỐ KHÔNG CÓ SẼ HIỂN THỊ TRANG NOT FOUND
