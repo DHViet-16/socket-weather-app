@@ -292,14 +292,17 @@ function updateForecastsItems(forecastWeather) {
   `;
   forecastItemsContainer.insertAdjacentHTML("beforeend", forecastItem);
 }
-//  DỰ BÁO THỜI TIẾT NGÀY MAI
+// dự báo thời tiết những ngày tiếp theo
 function updateForecastsTomorrowItems(forecastWeather) {
   const {
     time,
+    uv,
+    wind_kph,
+    humidity,
     temp_c,
-    condition: { icon },
+    condition: { icon, text },
   } = forecastWeather;
-
+  // console.log(forecastWeather);
   const dateTaken = new Date(time);
   const dateOption = {
     day: "2-digit",
@@ -310,21 +313,157 @@ function updateForecastsTomorrowItems(forecastWeather) {
   const dateResult = dateTaken.toLocaleDateString("en-US", dateOption);
 
   const forecastTomorrowItem = `
-        <div class="forecast-tomorrow-items">
-        <h5 class="forecast-tomorrow-items-date regular-txt">${dateResult}</h5>
-        <img
-          src="https://${icon}"
+  <div class="forecast-tomorrow-items">
+            <div class="forecast-tomomorrrow-items-display">
+              <h5 class="forecast-tomorrow-items-date regular-txt">${dateResult}</h5>
+              <img
+                src="https://${icon}"
           class="forecast-tomorrow-items-img"
-        />
-        <h5 class="forecast-item-temp">${Math.round(temp_c)} °C</h5>
-      </div>
-  `;
+                class="forecast-tomorrow-items-img"
+              />
+              <h5 class="forecast-item-temp">${Math.round(temp_c)} °C</h5>
+            </div>
+            <div class="forecast-tomorrow-items-hidden" >
+              <div class="detail-hidden">
+                <h5 class="detail-title regular-txt" >Desc :</h5>
+                <h5 class="detail-value regular-txt"><strong>${text}</strong></h5>
+              </div>
+              <div class="detail-hidden">
+                <h5 class="detail-title regular-txt" >UV :</h5>
+                <h5 class="detail-value regular-txt"><strong>${Math.round(
+                  uv
+                )}</strong></h5>
+              </div>
+              <div class="detail-hidden">
+                <h5 class="detail-title regular-txt">Wind Speed :</h5>
+                <h5 class="detail-value regular-txt"><strong>${Math.round(
+                  wind_kph
+                )}</strong> Km/h</h5>
+              </div>
+              <div class="detail-hidden">
+                <h5 class="detail-title regular-txt">Humidity :</h5>
+                <h5 class="detail-value regular-txt"><strong>${Math.round(
+                  humidity
+                )}</strong> %</h5>
+              </div>
+            </div>
+          </div>
+ `;
   forecastItemsTomorrowContainer.insertAdjacentHTML(
     "beforeend",
     forecastTomorrowItem
   );
+  const lastAddedItem = forecastItemsTomorrowContainer.lastElementChild;
+  console.log(lastAddedItem);
+  const displayDiv = lastAddedItem.querySelector(
+    ".forecast-tomomorrrow-items-display"
+  );
+  const hiddenDiv = lastAddedItem.querySelector(
+    ".forecast-tomorrow-items-hidden"
+  );
+
+  displayDiv.addEventListener("click", function () {
+    // thêm sự kiện khi ấn vào dự báo những ngày tiếp theo
+    hiddenDiv.classList.toggle("active");
+  });
+}
+function changeSunset(data) {
+  console.log(data);
+  const swapTime = handleDateAndTime(data);
+
+  if (
+    (swapTime.currentHour > swapTime.sunriseTodayHours ||
+      (swapTime.currentHour === swapTime.sunriseTodayHours && // Thời gian hiện tại nằm trong khoảng thời gian bình minh và hoàng hôn trong ngày (khi trời sáng)
+        swapTime.currentMinute >= swapTime.sunriseTodayMinute)) &&
+    (swapTime.currentHour < swapTime.sunsetTodayHour ||
+      (swapTime.currentHour === swapTime.sunsetTodayHour &&
+        swapTime.currentMinute <= swapTime.sunsetTodayMinute))
+  ) {
+    sunInfo.classList.remove("night-mode"); // trời sáng
+    sunriseTime.textContent = swapTime.sunriseToday;
+    sunsetTime.textContent = swapTime.sunsetToday;
+  } else {
+    sunInfo.classList.add("night-mode"); // trời tối
+
+    sunriseTime.textContent = swapTime.sunsetToday;
+    sunsetTime.textContent = swapTime.sunriseTomorrow;
+    console.log(sunriseTime.textContent, sunsetTime.textContent);
+  }
+}
+// Hàm tính toán của thanh dự báo còn bao lâu đến hoàng hôn , bình minh. Ý tưởng: chuyển về phút để tính toán.
+function calculateProgress(
+  currentHour,
+  currentMinute,
+  startHour,
+  startMinute,
+  endHour,
+  endMinute
+) {
+  let totalMinutes, elapsedMinutes;
+  if (currentHour >= startHour && currentHour < endHour) {
+    totalMinutes = (endHour - startHour) * 60 - startMinute + endMinute;
+    elapsedMinutes =
+      (currentHour - startHour) * 60 + currentMinute - startMinute;
+  } else {
+    totalMinutes =
+      (24 - startHour) * 60 - startMinute + endHour * 60 + endMinute;
+    if (currentHour >= startHour) {
+      if (currentHour === 0) {
+        return (currentHour = 24);
+      }
+      elapsedMinutes =
+        (currentHour - startHour) * 60 + currentMinute - startMinute;
+    } else {
+      elapsedMinutes =
+        (24 - startHour) * 60 +
+        currentMinute -
+        startMinute +
+        currentHour * 60 +
+        currentMinute;
+    }
+  }
+
+  let progressPercentage = (elapsedMinutes / totalMinutes) * 100; // số phút trôi qua / tổng số phút
+  return Math.max(0, Math.min(100, progressPercentage)); // Giới hạn từ 0% đến 100%
 }
 
+function updateProgressBar(data) {
+  const updateProgressTime = handleDateAndTime(data);
+
+  if (sunInfo.className.includes("night-mode")) {
+    // nếu trời tối
+    let progress = calculateProgress(
+      updateProgressTime.currentHour,
+      updateProgressTime.currentMinute,
+      updateProgressTime.sunsetTodayHour,
+      updateProgressTime.sunsetTodayMinute,
+      updateProgressTime.sunriseTomorrowHours,
+      updateProgressTime.sunriseTomorrowMinute
+    );
+
+    sunIcon.style.display = "none";
+    moonIcon.style.display = "inline-block";
+    console.log(progress);
+    moonIcon.style.transform = `translateX(${progress}%)`; // icon sẽ di chuyển từ trái sang phải
+  } else {
+    let progress = calculateProgress(
+      updateProgressTime.currentHour,
+      updateProgressTime.currentMinute,
+      updateProgressTime.sunriseTodayHours,
+      updateProgressTime.sunriseTodayMinute,
+      updateProgressTime.sunsetTodayHour,
+      updateProgressTime.sunsetTodayMinute
+    );
+    sunIcon.style.display = "inline-block";
+    moonIcon.style.display = "none";
+    console.log(progress);
+    document.styleSheets[0].insertRule(
+      `.sun-icon::after { width: calc(${100 - progress}% + 4px); }`,
+      document.styleSheets[0].cssRules.length
+    );
+    sunIcon.style.transform = `translateX(${progress}%)`;
+  }
+}
 // TÌM KIẾM THÀNH PHỐ KHÔNG CÓ SẼ HIỂN THỊ TRANG NOT FOUND
 function showDisplaySection(section) {
   [weatherInfoSection, notFoundSection].forEach(
