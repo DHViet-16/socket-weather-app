@@ -40,21 +40,7 @@ const sunIcon = document.querySelector(".sun-icon");
 //
 // Khi trang tải xong, tự động lấy vị trí người dùng
 document.addEventListener("DOMContentLoaded", () => {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        const locationString = `${latitude},${longitude}`;
-        socket.emit("getWeather", locationString);
-      },
-      (error) => {
-        console.error("Lỗi khi lấy vị trí:", error.message);
-      }
-    );
-  } else {
-    alert("Trình duyệt không hỗ trợ Geolocation.");
-  }
+  myLocation();
 });
 
 function removeVietnameseTones(str) {
@@ -83,6 +69,25 @@ cityInput.addEventListener("keydown", (event) => {
     getWeather();
   }
 });
+// add sự kiện vào icon định vị
+myLocationBtn.addEventListener("click", myLocation);
+function myLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const locationString = `${latitude},${longitude}`;
+        socket.emit("getWeather", locationString);
+      },
+      (error) => {
+        console.error("Lỗi khi lấy vị trí:", error.message);
+      }
+    );
+  } else {
+    alert("Trình duyệt không hỗ trợ Geolocation.");
+  }
+}
 
 socket.on("weatherData", (data) => {
   if (!data) {
