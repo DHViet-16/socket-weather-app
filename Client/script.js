@@ -72,10 +72,10 @@ function updateBg(data) {
         bgChangeTime.currentMinute <= bgChangeTime.sunsetTodayMinute))
   ) {
     // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../assets/bg.jpg")`;
+    document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
   } else {
     // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../assets/bg-night.png")`;
+    document.body.style.backgroundImage = `url("../asset/bg-night.png")`;
   }
 }
 
