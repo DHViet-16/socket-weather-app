@@ -95,13 +95,14 @@ socket.on("weatherData", (data) => {
   }
 
   updateWeatherInfo(data);
+  updateForecastsInfo(data);
   updateBg(data);
   changeSunset(data);
   updateProgressBar(data);
 });
 // Hàm xử lý thời gian hiện tại, thời gian hoàng hôn, bình minh,
 function handleDateAndTime(data) {
-  const now = convertTimeLocal(data.location.localtime); // lấy thời gian hiện tại của mỗi khu vực
+  const now = convertTimeLocal(data.localTime); // lấy thời gian hiện tại của mỗi khu vực
   let currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   // console.log(typeof currentHour);
@@ -214,41 +215,31 @@ function updateWeatherInfo(data) {
   uvText.innerHTML = `<strong>${uv}</strong>`;
   pressure.innerHTML = `<strong>${pressure_mb}</strong> Mb`;
   vision.innerHTML = `<strong>${vis_km}</strong> Km`;
-  updateForecastsInfo(data);
 }
-async function updateForecastsInfo(city) {
-  const forecastsData = await getFetchData(city);
-
-  if (!forecastsData || !forecastsData.forecast) {
-    console.log("Dữ liệu dự báo không hợp lệ.");
-    return;
-  }
-
-  const forecastDays = forecastsData.forecast.forecastday;
-  const now = new Date();
+function updateForecastsInfo(city) {
+  const timeForecast = handleDateAndTime(data);
   let closestForecast = null;
   let count = 0;
+
+  console.log("Dữ liệu F:", timeForecast.forecastDays);
   // Tìm thời điểm gần nhất trong tương lai
-  for (const forecastWeather of forecastDays) {
+  for (const forecastWeather of timeForecast.forecastDays) {
     for (const item of forecastWeather.hour) {
       const forecastTime = new Date(item.time);
+
       if (
-        forecastTime >= now &&
+        forecastTime >= timeForecast.now &&
         (!closestForecast || forecastTime < closestForecast)
       ) {
         closestForecast = forecastTime;
       }
     }
   }
-
-  // Xóa nội dung cũ trước khi cập nhật
   forecastItemsContainer.innerHTML = "";
-  forecastItemsTomorrowContainer.innerHTML = "";
-  // Hiển thị dự báo giờ gần nhất
-  forecastDays.forEach((item) => {
+  timeForecast.forecastDays.forEach((item) => {
     item.hour.forEach((forecastWeather) => {
       const forecastTime = new Date(forecastWeather.time);
-      if (forecastTime >= closestForecast && count < 10) {
+      if (forecastTime >= closestForecast && count < 15) {
         updateForecastsItems(forecastWeather);
         count++;
       }
@@ -257,9 +248,13 @@ async function updateForecastsInfo(city) {
 
   // Lọc dự báo ngày mai
   const timeTaken = "12:00";
-  const todayDate = new Date().toISOString().split("T")[0];
+  const today = timeForecast.now;
 
-  forecastDays.forEach((item) => {
+  const todayDate = timeForecast.now.toLocaleDateString("fr-CA").split("T")[0];
+
+  forecastItemsTomorrowContainer.innerHTML = "";
+
+  timeForecast.forecastDays.forEach((item) => {
     item.hour.forEach((forecastWeather) => {
       if (
         forecastWeather.time.includes(timeTaken) &&
