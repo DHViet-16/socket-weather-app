@@ -38,16 +38,18 @@ const sunsetTime = document.querySelector(".sunset .sunset-time");
 
 const moonIcon = document.querySelector(".moon-icon");
 const sunIcon = document.querySelector(".sun-icon");
-//
+
 // Khi trang tải xong, tự động lấy vị trí người dùng
 document.addEventListener("DOMContentLoaded", () => {
   myLocation();
 });
 
+//
 socket.on("weatherData", (data) => {
   if (!data) {
     socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
   }
+  // console.log(data);
 
   updateWeatherInfo(data);
   updateForecastsInfo(data);
@@ -56,6 +58,28 @@ socket.on("weatherData", (data) => {
   updateProgressBar(data);
 });
 
+//
+
+// Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
+function updateBg(data) {
+  const bgChangeTime = handleDateAndTime(data);
+  if (
+    (bgChangeTime.currentHour > bgChangeTime.sunriseTodayHours ||
+      (bgChangeTime.currentHour === bgChangeTime.sunriseTodayHours &&
+        bgChangeTime.currentMinute >= bgChangeTime.sunriseTodayMinute)) &&
+    (bgChangeTime.currentHour < bgChangeTime.sunsetTodayHour ||
+      (bgChangeTime.currentHour === bgChangeTime.sunsetTodayHour &&
+        bgChangeTime.currentMinute <= bgChangeTime.sunsetTodayMinute))
+  ) {
+    // console.log(hours, hoursSunset);
+    document.body.style.backgroundImage = `url("../assets/bg.jpg")`;
+  } else {
+    // console.log(hours, hoursSunset);
+    document.body.style.backgroundImage = `url("../assets/bg-night.png")`;
+  }
+}
+
+// chuyển đổi tiếng việt : Hà Tĩnh -> Ha Tinh
 function removeVietnameseTones(str) {
   return str
     .normalize("NFD") // Tách dấu ra khỏi ký tự
@@ -69,29 +93,77 @@ function getWeather() {
   if (cityInput.value.trim() != "") {
     const normalizedCity = removeVietnameseTones(cityInput.value);
     socket.emit("getWeather", normalizedCity);
+    // socket.emit("updateForecastsInfo", normalizedCity);
     cityInput.value = "";
     cityInput.blur();
   }
 }
+
 // Gắn sự kiện cho nút tìm kiếm
 searchBtn.addEventListener("click", getWeather);
+// searchBtn.addEventListener("click", updateBg);
 
 // Gắn sự kiện khi nhấn Enter
 cityInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     getWeather();
+    // updateBg();
   }
 });
-// add sự kiện vào icon định vị
 myLocationBtn.addEventListener("click", myLocation);
 function myLocation() {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
-        const locationString = `${latitude},${longitude}`;
-        socket.emit("getWeather", locationString);
+
+        try {
+          // Tải dữ liệu từ file JSON
+          const response = await fetch("worldcities.json")
+          const cities = await response.json();
+
+          // Hàm tính khoảng cách giữa hai điểm theo công thức Haversine
+          function getDistance(lat1, lon1, lat2, lon2) {
+            const toRad = (deg) => (deg * Math.PI) / 180;
+            const R = 6371; // Bán kính Trái Đất (km)
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) *
+                Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+          }
+
+          // Tìm thành phố gần nhất
+          let nearestCity = null;
+          let minDistance = Infinity;
+
+          cities.forEach((city) => {
+            const cityLat = parseFloat(city.lat);
+            const cityLng = parseFloat(city.lng);
+            const distance = getDistance(latitude, longitude, cityLat, cityLng);
+
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestCity = city;
+            }
+          });
+
+          if (nearestCity) {
+            const mylocation = removeVietnameseTones(nearestCity.city);
+            console.log("Bạn đang ở:" + "-", nearestCity.city);
+            socket.emit("getWeather", mylocation);
+          } else {
+            console.log("Không tìm thấy thành phố phù hợp.");
+          }
+        } catch (error) {
+          console.error("Lỗi khi tải file JSON:", error);
+        }
       },
       (error) => {
         console.error("Lỗi khi lấy vị trí:", error.message);
@@ -101,88 +173,10 @@ function myLocation() {
     alert("Trình duyệt không hỗ trợ Geolocation.");
   }
 }
-
-// Hàm xử lý thời gian hiện tại, thời gian hoàng hôn, bình minh,
-function handleDateAndTime(data) {
-  const now = convertTimeLocal(data.localTime); // lấy thời gian hiện tại của mỗi khu vực
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  // console.log(typeof currentHour);
-  const forecastDays = data.forecast.forecastday;
-  const sunriseToday = forecastDays[0]?.astro?.sunrise.replace(/ AM| PM/, "");
-  const sunriseTodayHours = parseInt(sunriseToday.split(":")[0]);
-  // console.log(typeof sunriseTodayHours);
-  const sunriseTodayMinute = parseInt(sunriseToday.split(":")[1]);
-  const sunriseTomorrow = forecastDays[1]?.astro?.sunrise.replace(
-    / AM| PM/,
-    ""
-  );
-  const sunriseTomorrowHours = parseInt(sunriseTomorrow.split(":")[0]);
-  const sunriseTomorrowMinute = parseInt(sunriseTomorrow.split(":")[1]);
-  const sunsetToday = convert24H(forecastDays[0]?.astro?.sunset); // chuuyển đổi AM PM : 6PM thành 18AM
-  const sunsetTodayHour = parseInt(sunsetToday.split(":")[0]);
-  // console.log(typeof sunsetTodayHour);
-  const sunsetTodayMinute = parseInt(sunsetToday.split(":")[1]);
-
-  return {
-    now,
-    forecastDays,
-    currentHour,
-    currentMinute,
-    sunriseTodayHours,
-    sunriseTodayMinute,
-    sunriseTomorrowHours,
-    sunriseTomorrowMinute,
-    sunsetTodayHour,
-    sunsetTodayMinute,
-    sunsetToday,
-    sunriseTomorrow,
-    sunriseToday,
-  };
-}
-//  // lấy thời gian hiện tại của mỗi khu vực
-function convertTimeLocal(time) {
-  return new Date(time.replace(" ", "T"));
-}
-// chuyển đổi AM PM : 6PM thành 18AM
-function convert24H(time) {
-  timeconvert = time.replace(
-    /(\d{1,2}):(\d{2}) (AM|PM)/,
-    (match, h, m, period) =>
-      `${
-        period === "PM" && h !== "12"
-          ? +h + 12
-          : period === "AM" && h === "12"
-          ? "00"
-          : h
-      }:${m}`
-  );
-  return timeconvert;
-}
-//
-// Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
-function updateBg(data) {
-  const bgChangeTime = handleDateAndTime(data);
-  if (
-    (bgChangeTime.currentHour > bgChangeTime.sunriseTodayHours ||
-      (bgChangeTime.currentHour === bgChangeTime.sunriseTodayHours &&
-        bgChangeTime.currentMinute >= bgChangeTime.sunriseTodayMinute)) &&
-    (bgChangeTime.currentHour < bgChangeTime.sunsetTodayHour ||
-      (bgChangeTime.currentHour === bgChangeTime.sunsetTodayHour &&
-        bgChangeTime.currentMinute <= bgChangeTime.sunsetTodayMinute))
-  ) {
-    // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
-  } else {
-    // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../asset/bg-night.png")`;
-  }
-}
-
-//
+// Hàm dự báo những thông tin cần có
 function updateWeatherInfo(data) {
   showDisplaySection(weatherInfoSection);
-
+  // console.log(data);
   const {
     location: { name },
     current: {
@@ -199,6 +193,7 @@ function updateWeatherInfo(data) {
       forecastday: [
         {
           day: { maxtemp_c, mintemp_c },
+          // astro: { sunrise, sunset },
         },
       ],
     },
@@ -218,17 +213,19 @@ function updateWeatherInfo(data) {
   pressure.innerHTML = `<strong>${pressure_mb}</strong> Mb`;
   vision.innerHTML = `<strong>${vis_km}</strong> Km`;
 }
+
+//
 function updateForecastsInfo(data) {
   const timeForecast = handleDateAndTime(data);
   let closestForecast = null;
   let count = 0;
-
+  // console.log(now);
   console.log("Dữ liệu F:", timeForecast.forecastDays);
   // Tìm thời điểm gần nhất trong tương lai
   for (const forecastWeather of timeForecast.forecastDays) {
     for (const item of forecastWeather.hour) {
       const forecastTime = new Date(item.time);
-
+      // console.log(forecastTime, timeForecast.now);
       if (
         forecastTime >= timeForecast.now &&
         (!closestForecast || forecastTime < closestForecast)
@@ -242,6 +239,11 @@ function updateForecastsInfo(data) {
     item.hour.forEach((forecastWeather) => {
       const forecastTime = new Date(forecastWeather.time);
       if (forecastTime >= closestForecast && count < 15) {
+        // console.log(
+        //   "Dữ liệu updateForecastsItems",
+        //   closestForecast,
+        //   forecastTime
+        // );
         updateForecastsItems(forecastWeather);
         count++;
       }
@@ -251,9 +253,9 @@ function updateForecastsInfo(data) {
   // Lọc dự báo ngày mai
   const timeTaken = "12:00";
   const today = timeForecast.now;
-
+  // console.log(today);
   const todayDate = timeForecast.now.toLocaleDateString("fr-CA").split("T")[0];
-
+  // console.log(todayDate);
   forecastItemsTomorrowContainer.innerHTML = "";
 
   timeForecast.forecastDays.forEach((item) => {
@@ -264,10 +266,12 @@ function updateForecastsInfo(data) {
       ) {
         updateForecastsTomorrowItems(forecastWeather);
       }
+      // console.log("forecastWeather", forecastWeather.time);
     });
   });
 }
-//  DỰ BÁO THỜI TIẾT CÁC KHOẢNG THỜI GIAN TRONG NGÀY
+
+// dự báo thời tiết ở những khoảng thời gian trong ngày
 function updateForecastsItems(forecastWeather) {
   const {
     time,
@@ -281,7 +285,6 @@ function updateForecastsItems(forecastWeather) {
     minute: "2-digit",
     hour12: false,
   });
-
   const forecastItem = `
             <div class="forecast-item">
           <h5 class="forecast-item-date regular-txt">${timeResult}</h5>
@@ -294,6 +297,7 @@ function updateForecastsItems(forecastWeather) {
   `;
   forecastItemsContainer.insertAdjacentHTML("beforeend", forecastItem);
 }
+
 // dự báo thời tiết những ngày tiếp theo
 function updateForecastsTomorrowItems(forecastWeather) {
   const {
@@ -369,6 +373,72 @@ function updateForecastsTomorrowItems(forecastWeather) {
     hiddenDiv.classList.toggle("active");
   });
 }
+//  // lấy thời gian hiện tại của mỗi khu vực
+function convertTimeLocal(time) {
+  return new Date(time.replace(" ", "T"));
+}
+// chuyển đổi AM PM : 6PM thành 18AM
+function convert24H(time) {
+  timeconvert = time.replace(
+    /(\d{1,2}):(\d{2}) (AM|PM)/,
+    (match, h, m, period) =>
+      `${
+        period === "PM" && h !== "12"
+          ? +h + 12
+          : period === "AM" && h === "12"
+          ? "00"
+          : h
+      }:${m}`
+  );
+  return timeconvert;
+}
+// Hàm xử lý thời gian hiện tại, thời gian hoàng hôn, bình minh,
+function handleDateAndTime(data) {
+  const now = convertTimeLocal(data.localTime); // lấy thời gian hiện tại của mỗi khu vực
+  // console.log(typeof now);
+
+  // console.log(momentTime);
+  // const currentHourString = momentTime[1].split(":")[0];
+  // const currentMinuteString = momentTime[1].split(":")[1];
+  // console.log(currentHourString);
+  // console.log(typeof currentHourString);
+  // let [currentHourString, currentMinuteString] = now.split(":");
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const forecastDays = data.forecast.forecastday;
+  const sunriseToday = forecastDays[0]?.astro?.sunrise.replace(/ AM| PM/, "");
+  const sunriseTodayHours = parseInt(sunriseToday.split(":")[0]);
+  // console.log(typeof sunriseTodayHours);
+  const sunriseTodayMinute = parseInt(sunriseToday.split(":")[1]);
+  const sunriseTomorrow = forecastDays[1]?.astro?.sunrise.replace(
+    / AM| PM/,
+    ""
+  );
+  const sunriseTomorrowHours = parseInt(sunriseTomorrow.split(":")[0]);
+  const sunriseTomorrowMinute = parseInt(sunriseTomorrow.split(":")[1]);
+  const sunsetToday = convert24H(forecastDays[0]?.astro?.sunset); // chuuyển đổi AM PM : 6PM thành 18AM
+  const sunsetTodayHour = parseInt(sunsetToday.split(":")[0]);
+  // console.log(typeof sunsetTodayHour);
+  const sunsetTodayMinute = parseInt(sunsetToday.split(":")[1]);
+
+  return {
+    now,
+    forecastDays,
+    currentHour,
+    currentMinute,
+    sunriseTodayHours,
+    sunriseTodayMinute,
+    sunriseTomorrowHours,
+    sunriseTomorrowMinute,
+    sunsetTodayHour,
+    sunsetTodayMinute,
+    sunsetToday,
+    sunriseTomorrow,
+    sunriseToday,
+  };
+}
+// hàm chuyển đổi hoàng hôn, bình minh khi trời sáng và trời tối
 function changeSunset(data) {
   console.log(data);
   const swapTime = handleDateAndTime(data);
@@ -389,7 +459,7 @@ function changeSunset(data) {
 
     sunriseTime.textContent = swapTime.sunsetToday;
     sunsetTime.textContent = swapTime.sunriseTomorrow;
-    console.log(sunriseTime.textContent, sunsetTime.textContent);
+    // console.log(sunriseTime.textContent, sunsetTime.textContent);
   }
 }
 // Hàm tính toán của thanh dự báo còn bao lâu đến hoàng hôn , bình minh. Ý tưởng: chuyển về phút để tính toán.
@@ -410,7 +480,7 @@ function calculateProgress(
     totalMinutes =
       (24 - startHour) * 60 - startMinute + endHour * 60 + endMinute;
     if (currentHour >= startHour) {
-      if (currentHour === 0) {
+      if (parseInt(currentHour) === 0) {
         return (currentHour = 24);
       }
       elapsedMinutes =
@@ -475,5 +545,8 @@ function showDisplaySection(section) {
 }
 
 socket.on("error", () => {
+  // Ẩn tất cả các phần
   showDisplaySection(notFoundSection);
+
+  // Nếu có phần hiển thị lỗi, cập nhật nội dung
 });
