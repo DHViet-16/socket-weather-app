@@ -2,6 +2,7 @@ const socket = io("http://localhost:3000");
 
 const cityInput = document.querySelector(".city-input");
 const searchBtn = document.querySelector(".search-btn");
+const myLocationBtn = document.querySelector(".my-location-btn");
 
 const notFoundSection = document.querySelector(".not-found");
 const searchCitySection = document.querySelector(".search-city");
@@ -41,6 +42,18 @@ const sunIcon = document.querySelector(".sun-icon");
 // Khi trang tải xong, tự động lấy vị trí người dùng
 document.addEventListener("DOMContentLoaded", () => {
   myLocation();
+});
+
+socket.on("weatherData", (data) => {
+  if (!data) {
+    socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
+  }
+
+  updateWeatherInfo(data);
+  updateForecastsInfo(data);
+  updateBg(data);
+  changeSunset(data);
+  updateProgressBar(data);
 });
 
 function removeVietnameseTones(str) {
@@ -89,21 +102,10 @@ function myLocation() {
   }
 }
 
-socket.on("weatherData", (data) => {
-  if (!data) {
-    socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
-  }
-
-  updateWeatherInfo(data);
-  updateForecastsInfo(data);
-  updateBg(data);
-  changeSunset(data);
-  updateProgressBar(data);
-});
 // Hàm xử lý thời gian hiện tại, thời gian hoàng hôn, bình minh,
 function handleDateAndTime(data) {
   const now = convertTimeLocal(data.localTime); // lấy thời gian hiện tại của mỗi khu vực
-  let currentHour = now.getHours();
+  const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   // console.log(typeof currentHour);
   const forecastDays = data.forecast.forecastday;
@@ -170,10 +172,10 @@ function updateBg(data) {
         bgChangeTime.currentMinute <= bgChangeTime.sunsetTodayMinute))
   ) {
     // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../assets/bg.jpg")`;
+    document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
   } else {
     // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../assets/bg-night.png")`;
+    document.body.style.backgroundImage = `url("../asset/bg-night.png")`;
   }
 }
 
@@ -209,14 +211,14 @@ function updateWeatherInfo(data) {
   windValueTxt.textContent = `${Math.round(wind_kph)} km/h`;
   weatherSummaryImg.src = `https://${icon}`;
 
-  minTemp.innerHTML = `<strong>${mintemp_c}</strong> °`;
-  feelslike.innerHTML = `<strong>${feelslike_c}</strong> °`;
-  maxTemp.innerHTML = `<strong>${maxtemp_c}</strong> °`;
-  uvText.innerHTML = `<strong>${uv}</strong>`;
+  minTemp.innerHTML = `<strong>${Math.round(mintemp_c)}</strong> °`;
+  feelslike.innerHTML = `<strong>${Math.round(feelslike_c)}</strong> °`;
+  maxTemp.innerHTML = `<strong>${Math.round(maxtemp_c)}</strong> °`;
+  uvText.innerHTML = `<strong>${Math.round(uv)}</strong>`;
   pressure.innerHTML = `<strong>${pressure_mb}</strong> Mb`;
   vision.innerHTML = `<strong>${vis_km}</strong> Km`;
 }
-function updateForecastsInfo(city) {
+function updateForecastsInfo(data) {
   const timeForecast = handleDateAndTime(data);
   let closestForecast = null;
   let count = 0;
@@ -354,7 +356,7 @@ function updateForecastsTomorrowItems(forecastWeather) {
     forecastTomorrowItem
   );
   const lastAddedItem = forecastItemsTomorrowContainer.lastElementChild;
-  console.log(lastAddedItem);
+  // console.log(lastAddedItem);
   const displayDiv = lastAddedItem.querySelector(
     ".forecast-tomomorrrow-items-display"
   );
