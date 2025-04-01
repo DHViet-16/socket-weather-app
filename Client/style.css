@@ -246,7 +246,6 @@ body:before {
   padding: 0 10px;
 }
 .detail-hidden .detail-title {
-  flex: 1;
   text-align: left;
 }
 .detail-hidden .detail-value {
@@ -297,6 +296,7 @@ body:before {
 strong {
   font-size: 16px;
 }
+
 .weather-more-items .weather-more-desc {
   margin-top: auto;
   font-size: 10px;

@@ -120,7 +120,7 @@ function myLocation() {
 
         try {
           // Tải dữ liệu từ file JSON
-          const response = await fetch("worldcities.json")
+          const response = await fetch("worldcities.json");
           const cities = await response.json();
 
           // Hàm tính khoảng cách giữa hai điểm theo công thức Haversine
@@ -251,23 +251,17 @@ function updateForecastsInfo(data) {
   });
 
   // Lọc dự báo ngày mai
-  const timeTaken = "12:00";
-  const today = timeForecast.now;
-  // console.log(today);
-  const todayDate = timeForecast.now.toLocaleDateString("fr-CA").split("T")[0];
-  // console.log(todayDate);
   forecastItemsTomorrowContainer.innerHTML = "";
 
-  timeForecast.forecastDays.forEach((item) => {
-    item.hour.forEach((forecastWeather) => {
-      if (
-        forecastWeather.time.includes(timeTaken) &&
-        !forecastWeather.time.includes(todayDate)
-      ) {
-        updateForecastsTomorrowItems(forecastWeather);
-      }
-      // console.log("forecastWeather", forecastWeather.time);
-    });
+  const todayDate = timeForecast.now.toLocaleDateString("fr-CA").split("T")[0];
+  console.log(todayDate);
+  forecastItemsTomorrowContainer.innerHTML = "";
+
+  timeForecast.forecastDays.forEach((forecastWeather) => {
+    if (!forecastWeather.date.includes(todayDate)) {
+      // console.log(forecastWeather);
+      updateForecastsTomorrowItems(forecastWeather);
+    }
   });
 }
 
@@ -301,15 +295,17 @@ function updateForecastsItems(forecastWeather) {
 // dự báo thời tiết những ngày tiếp theo
 function updateForecastsTomorrowItems(forecastWeather) {
   const {
-    time,
-    uv,
-    wind_kph,
-    humidity,
-    temp_c,
-    condition: { icon, text },
+    date,
+    day: {
+      avgtemp_c,
+      uv,
+      maxwind_kph,
+      avghumidity,
+      condition: { text, icon },
+    },
   } = forecastWeather;
   // console.log(forecastWeather);
-  const dateTaken = new Date(time);
+  const dateTaken = new Date(date);
   const dateOption = {
     day: "2-digit",
 
@@ -327,29 +323,29 @@ function updateForecastsTomorrowItems(forecastWeather) {
           class="forecast-tomorrow-items-img"
                 class="forecast-tomorrow-items-img"
               />
-              <h5 class="forecast-item-temp">${Math.round(temp_c)} °C</h5>
+              <h5 class="forecast-item-temp">${Math.round(avgtemp_c)} °C</h5>
             </div>
             <div class="forecast-tomorrow-items-hidden" >
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt" >Desc :</h5>
-                <h5 class="detail-value regular-txt"><strong>${text}</strong></h5>
+                <h5 class="detail-value regular-txt"><strong style="font-size:14px">${text}</strong></h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt" >UV :</h5>
-                <h5 class="detail-value regular-txt"><strong>${Math.round(
+                <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
                   uv
                 )}</strong></h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Wind Speed :</h5>
-                <h5 class="detail-value regular-txt"><strong>${Math.round(
-                  wind_kph
+                <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
+                  maxwind_kph
                 )}</strong> Km/h</h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Humidity :</h5>
-                <h5 class="detail-value regular-txt"><strong>${Math.round(
-                  humidity
+                <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
+                  avghumidity
                 )}</strong> %</h5>
               </div>
             </div>

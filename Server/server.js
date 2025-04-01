@@ -19,7 +19,6 @@ app.use(cors());
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 const WEATHER_API_URL = "https://api.weatherapi.com/v1/forecast.json";
 
-// Hàm lấy dữ liệu thời tiết từ OpenWeatherMap
 const fetchWeatherData = async (city) => {
   try {
     const response = await axios.get(WEATHER_API_URL, {
