@@ -120,47 +120,14 @@ function myLocation() {
 
         try {
           // Tải dữ liệu từ file JSON
-          const response = await fetch("worldcities.json");
-          const cities = await response.json();
+          const response = `https://api-bdc.io/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
 
-          // Hàm tính khoảng cách giữa hai điểm theo công thức Haversine
-          function getDistance(lat1, lon1, lat2, lon2) {
-            const toRad = (deg) => (deg * Math.PI) / 180;
-            const R = 6371; // Bán kính Trái Đất (km)
-            const dLat = toRad(lat2 - lat1);
-            const dLon = toRad(lon2 - lon1);
-            const a =
-              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(toRad(lat1)) *
-                Math.cos(toRad(lat2)) *
-                Math.sin(dLon / 2) *
-                Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-          }
-
-          // Tìm thành phố gần nhất
-          let nearestCity = null;
-          let minDistance = Infinity;
-
-          cities.forEach((city) => {
-            const cityLat = parseFloat(city.lat);
-            const cityLng = parseFloat(city.lng);
-            const distance = getDistance(latitude, longitude, cityLat, cityLng);
-
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearestCity = city;
-            }
-          });
-
-          if (nearestCity) {
-            const mylocation = removeVietnameseTones(nearestCity.city);
-            console.log("Bạn đang ở:" + "-", nearestCity.city);
-            socket.emit("getWeather", mylocation);
-          } else {
-            console.log("Không tìm thấy thành phố phù hợp.");
-          }
+          fetch(response)
+            .then((res) => res.json())
+            .then((data) => {
+              console.log(data);
+              socket.emit("getWeather", data.city);
+            });
         } catch (error) {
           console.error("Lỗi khi tải file JSON:", error);
         }
@@ -333,20 +300,20 @@ function updateForecastsTomorrowItems(forecastWeather) {
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt" >UV :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-                  uv
-                )}</strong></h5>
+    uv
+  )}</strong></h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Wind Speed :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-                  maxwind_kph
-                )}</strong> Km/h</h5>
+    maxwind_kph
+  )}</strong> Km/h</h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Humidity :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-                  avghumidity
-                )}</strong> %</h5>
+    avghumidity
+  )}</strong> %</h5>
               </div>
             </div>
           </div>
@@ -378,10 +345,9 @@ function convert24H(time) {
   timeconvert = time.replace(
     /(\d{1,2}):(\d{2}) (AM|PM)/,
     (match, h, m, period) =>
-      `${
-        period === "PM" && h !== "12"
-          ? +h + 12
-          : period === "AM" && h === "12"
+      `${period === "PM" && h !== "12"
+        ? +h + 12
+        : period === "AM" && h === "12"
           ? "00"
           : h
       }:${m}`
