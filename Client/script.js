@@ -379,14 +379,14 @@ function handleDateAndTime(data) {
 // Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
 function updateUIBasedOnTime(data) {
   const timeInfo = handleDateAndTime(data);
-  console.log(
-    timeInfo.currentHour,
-    timeInfo.currentMinute,
-    timeInfo.sunriseTodayHours,
-    timeInfo.sunriseTodayMinute,
-    timeInfo.sunsetTodayHour,
-    timeInfo.sunsetTodayMinute
-  );
+  // console.log(
+  //   timeInfo.currentHour,
+  //   timeInfo.currentMinute,
+  //   timeInfo.sunriseTodayHours,
+  //   timeInfo.sunriseTodayMinute,
+  //   timeInfo.sunsetTodayHour,
+  //   timeInfo.sunsetTodayMinute
+  // );
   const isDayTime =
     (timeInfo.currentHour > timeInfo.sunriseTodayHours ||
       (timeInfo.currentHour === timeInfo.sunriseTodayHours &&
@@ -433,14 +433,13 @@ function calculateProgress(
     totalMinutes =
       (24 - startHour) * 60 - startMinute + endHour * 60 + endMinute;
     if (currentHour >= startHour) {
-      if (parseInt(currentHour) === 0) {
-        currentHour = 24;
-      }
       elapsedMinutes =
         (currentHour - startHour) * 60 + currentMinute - startMinute;
+      // console.log(elapsedMinutes);
     } else {
       elapsedMinutes =
-        (24 - startHour) * 60 + startMinute + currentHour * 60 + currentMinute;
+        (24 - startHour) * 60 - startMinute + currentHour * 60 + currentMinute;
+      // console.log(elapsedMinutes);
     }
   }
 
