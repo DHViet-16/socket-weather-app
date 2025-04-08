@@ -379,7 +379,14 @@ function handleDateAndTime(data) {
 // Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
 function updateUIBasedOnTime(data) {
   const timeInfo = handleDateAndTime(data);
-
+  console.log(
+    timeInfo.currentHour,
+    timeInfo.currentMinute,
+    timeInfo.sunriseTodayHours,
+    timeInfo.sunriseTodayMinute,
+    timeInfo.sunsetTodayHour,
+    timeInfo.sunsetTodayMinute
+  );
   const isDayTime =
     (timeInfo.currentHour > timeInfo.sunriseTodayHours ||
       (timeInfo.currentHour === timeInfo.sunriseTodayHours &&
@@ -390,6 +397,7 @@ function updateUIBasedOnTime(data) {
 
   if (isDayTime) {
     // Trời sáng
+
     document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
     sunInfo.classList.remove("night-mode");
     sunriseTime.textContent = timeInfo.sunriseToday;
@@ -412,7 +420,12 @@ function calculateProgress(
   endMinute
 ) {
   let totalMinutes, elapsedMinutes;
-  if (currentHour >= startHour && currentHour < endHour) {
+  if (
+    (currentHour > startHour ||
+      (currentHour === startHour && currentMinute >= startMinute)) &&
+    (currentHour < endHour ||
+      (currentHour === endHour && currentMinute <= endMinute))
+  ) {
     totalMinutes = (endHour - startHour) * 60 - startMinute + endMinute;
     elapsedMinutes =
       (currentHour - startHour) * 60 + currentMinute - startMinute;
@@ -421,17 +434,13 @@ function calculateProgress(
       (24 - startHour) * 60 - startMinute + endHour * 60 + endMinute;
     if (currentHour >= startHour) {
       if (parseInt(currentHour) === 0) {
-        return (currentHour = 24);
+        currentHour = 24;
       }
       elapsedMinutes =
         (currentHour - startHour) * 60 + currentMinute - startMinute;
     } else {
       elapsedMinutes =
-        (24 - startHour) * 60 +
-        currentMinute -
-        startMinute +
-        currentHour * 60 +
-        currentMinute;
+        (24 - startHour) * 60 + startMinute + currentHour * 60 + currentMinute;
     }
   }
 
@@ -455,6 +464,7 @@ function updateProgressBar(data) {
 
     sunIcon.style.display = "none";
     moonIcon.style.display = "inline-block";
+
     console.log(progress);
     moonIcon.style.transform = `translateX(${progress}%)`; // icon sẽ di chuyển từ trái sang phải
   } else {
