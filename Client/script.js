@@ -53,31 +53,11 @@ socket.on("weatherData", (data) => {
 
   updateWeatherInfo(data);
   updateForecastsInfo(data);
-  updateBg(data);
-  changeSunset(data);
+  updateUIBasedOnTime(data);
   updateProgressBar(data);
 });
 
 //
-
-// Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
-function updateBg(data) {
-  const bgChangeTime = handleDateAndTime(data);
-  if (
-    (bgChangeTime.currentHour > bgChangeTime.sunriseTodayHours ||
-      (bgChangeTime.currentHour === bgChangeTime.sunriseTodayHours &&
-        bgChangeTime.currentMinute >= bgChangeTime.sunriseTodayMinute)) &&
-    (bgChangeTime.currentHour < bgChangeTime.sunsetTodayHour ||
-      (bgChangeTime.currentHour === bgChangeTime.sunsetTodayHour &&
-        bgChangeTime.currentMinute <= bgChangeTime.sunsetTodayMinute))
-  ) {
-    // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
-  } else {
-    // console.log(hours, hoursSunset);
-    document.body.style.backgroundImage = `url("../asset/bg-night.png")`;
-  }
-}
 
 // chuyển đổi tiếng việt : Hà Tĩnh -> Ha Tinh
 function removeVietnameseTones(str) {
@@ -96,6 +76,8 @@ function getWeather() {
     // socket.emit("updateForecastsInfo", normalizedCity);
     cityInput.value = "";
     cityInput.blur();
+  } else {
+    alert("Please enter city name !!!");
   }
 }
 
@@ -300,20 +282,20 @@ function updateForecastsTomorrowItems(forecastWeather) {
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt" >UV :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-    uv
-  )}</strong></h5>
+                  uv
+                )}</strong></h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Wind Speed :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-    maxwind_kph
-  )}</strong> Km/h</h5>
+                  maxwind_kph
+                )}</strong> Km/h</h5>
               </div>
               <div class="detail-hidden">
                 <h5 class="detail-title regular-txt">Humidity :</h5>
                 <h5 class="detail-value regular-txt"><strong style="font-size:14px">${Math.round(
-    avghumidity
-  )}</strong> %</h5>
+                  avghumidity
+                )}</strong> %</h5>
               </div>
             </div>
           </div>
@@ -345,9 +327,10 @@ function convert24H(time) {
   timeconvert = time.replace(
     /(\d{1,2}):(\d{2}) (AM|PM)/,
     (match, h, m, period) =>
-      `${period === "PM" && h !== "12"
-        ? +h + 12
-        : period === "AM" && h === "12"
+      `${
+        period === "PM" && h !== "12"
+          ? +h + 12
+          : period === "AM" && h === "12"
           ? "00"
           : h
       }:${m}`
@@ -358,13 +341,6 @@ function convert24H(time) {
 function handleDateAndTime(data) {
   const now = convertTimeLocal(data.localTime); // lấy thời gian hiện tại của mỗi khu vực
   // console.log(typeof now);
-
-  // console.log(momentTime);
-  // const currentHourString = momentTime[1].split(":")[0];
-  // const currentMinuteString = momentTime[1].split(":")[1];
-  // console.log(currentHourString);
-  // console.log(typeof currentHourString);
-  // let [currentHourString, currentMinuteString] = now.split(":");
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 
@@ -400,28 +376,30 @@ function handleDateAndTime(data) {
     sunriseToday,
   };
 }
-// hàm chuyển đổi hoàng hôn, bình minh khi trời sáng và trời tối
-function changeSunset(data) {
-  console.log(data);
-  const swapTime = handleDateAndTime(data);
+// Hàm chuyển đổi background giữa ban ngày và ban đên dựa vào thời gian hoàng hôn bình minh
+function updateUIBasedOnTime(data) {
+  const timeInfo = handleDateAndTime(data);
 
-  if (
-    (swapTime.currentHour > swapTime.sunriseTodayHours ||
-      (swapTime.currentHour === swapTime.sunriseTodayHours && // Thời gian hiện tại nằm trong khoảng thời gian bình minh và hoàng hôn trong ngày (khi trời sáng)
-        swapTime.currentMinute >= swapTime.sunriseTodayMinute)) &&
-    (swapTime.currentHour < swapTime.sunsetTodayHour ||
-      (swapTime.currentHour === swapTime.sunsetTodayHour &&
-        swapTime.currentMinute <= swapTime.sunsetTodayMinute))
-  ) {
-    sunInfo.classList.remove("night-mode"); // trời sáng
-    sunriseTime.textContent = swapTime.sunriseToday;
-    sunsetTime.textContent = swapTime.sunsetToday;
+  const isDayTime =
+    (timeInfo.currentHour > timeInfo.sunriseTodayHours ||
+      (timeInfo.currentHour === timeInfo.sunriseTodayHours &&
+        timeInfo.currentMinute >= timeInfo.sunriseTodayMinute)) &&
+    (timeInfo.currentHour < timeInfo.sunsetTodayHour ||
+      (timeInfo.currentHour === timeInfo.sunsetTodayHour &&
+        timeInfo.currentMinute <= timeInfo.sunsetTodayMinute));
+
+  if (isDayTime) {
+    // Trời sáng
+    document.body.style.backgroundImage = `url("../asset/bg.jpg")`;
+    sunInfo.classList.remove("night-mode");
+    sunriseTime.textContent = timeInfo.sunriseToday;
+    sunsetTime.textContent = timeInfo.sunsetToday;
   } else {
-    sunInfo.classList.add("night-mode"); // trời tối
-
-    sunriseTime.textContent = swapTime.sunsetToday;
-    sunsetTime.textContent = swapTime.sunriseTomorrow;
-    // console.log(sunriseTime.textContent, sunsetTime.textContent);
+    // Trời tối
+    document.body.style.backgroundImage = `url("../asset/bg-night.png")`;
+    sunInfo.classList.add("night-mode");
+    sunriseTime.textContent = timeInfo.sunsetToday;
+    sunsetTime.textContent = timeInfo.sunriseTomorrow;
   }
 }
 // Hàm tính toán của thanh dự báo còn bao lâu đến hoàng hôn , bình minh. Ý tưởng: chuyển về phút để tính toán.
