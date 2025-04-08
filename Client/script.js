@@ -49,7 +49,7 @@ socket.on("weatherData", (data) => {
   if (!data) {
     socket.emit("error", "Không thể lấy dữ liệu thời tiết!");
   }
-  // console.log(data);
+  console.log(data);
 
   updateWeatherInfo(data);
   updateForecastsInfo(data);
@@ -107,7 +107,7 @@ function myLocation() {
           fetch(response)
             .then((res) => res.json())
             .then((data) => {
-              console.log(data);
+              // console.log(data);
               socket.emit("getWeather", data.city);
             });
         } catch (error) {
@@ -203,7 +203,7 @@ function updateForecastsInfo(data) {
   forecastItemsTomorrowContainer.innerHTML = "";
 
   const todayDate = timeForecast.now.toLocaleDateString("fr-CA").split("T")[0];
-  console.log(todayDate);
+  // console.log(todayDate);
   forecastItemsTomorrowContainer.innerHTML = "";
 
   timeForecast.forecastDays.forEach((forecastWeather) => {
